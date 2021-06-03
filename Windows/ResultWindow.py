@@ -46,7 +46,52 @@ class ResultWindow(QMainWindow):
             f"|_5_| Максимальная невязка: {self.user_parameters['maximum residual value']} пикселей")
 
     def show_triangulation(self):
-        pass
+        if self.ParametersShowToolBox.currentIndex() == 0:
+            self.map_takenPoints.show_taken_points(color='#%02x%02x%02x' % (
+                self.ColorPointsButton.palette().button().color().red(),
+                self.ColorPointsButton.palette().button().color().green(),
+                self.ColorPointsButton.palette().button().color().blue(),
+            ))
+        elif self.ParametersShowToolBox.currentIndex() == 1:
+            self.map_triangulation.show_2d_triangulation(color='#%02x%02x%02x' % (
+                self.ColorLinesButton.palette().button().color().red(),
+                self.ColorLinesButton.palette().button().color().green(),
+                self.ColorLinesButton.palette().button().color().blue(),
+            ))
+        else:
+            self.show_3d_triangulation()
+
+    def show_3d_triangulation(self):
+        colorTrianglesOnTop = self.ColorTrianglesButton.palette().button().color()
+        colorSkeleton = self.ColorSkeletonButton.palette().button().color()
+
+        triangles = self.map_triangulation.triangles
+        colorsAllTriangles = np.empty(np.array(triangles).shape, dtype='U50')
+        for i in range(len(triangles)):
+            averageZ = 150 * max(abs(triangles[i].nodes[0].z), abs(triangles[i].nodes[1].z),
+                                 abs(triangles[i].nodes[2].z)) / (
+                               self.user_parameters['range of height'][1] - self.user_parameters['range of height'][0])
+            colorsAllTriangles[i] = '#%02x%02x%02x' % (
+                min(int(averageZ), colorTrianglesOnTop.red()),
+                min(int(averageZ), colorTrianglesOnTop.green()),
+                min(int(averageZ), colorTrianglesOnTop.blue()))
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        triangles = []
+        for triangle in self.map_triangulation.triangles:
+            triangles.append(
+                ((triangle.nodes[0].x, triangle.nodes[0].y, triangle.nodes[0].z),
+                 (triangle.nodes[1].x, triangle.nodes[1].y, triangle.nodes[1].z),
+                 (triangle.nodes[2].x, triangle.nodes[2].y, triangle.nodes[2].z))
+            )
+        ax.add_collection3d(Poly3DCollection(verts=triangles,
+                                             alpha=0.0 if self.ShowSkeletonRadio.isChecked() else 1.0,
+                                             edgecolors='#%02x%02x%02x' % (
+                                                 colorSkeleton.red(),
+                                                 colorSkeleton.green(),
+                                                 colorSkeleton.blue()) if not self.ShowTrianglesRadio.isChecked() else None,
+                                             facecolors=colorsAllTriangles if not self.ShowSkeletonRadio.isChecked() else None))
+        plt.show()
 
     def show_map_image(self, map_image):
         if map_image is None:

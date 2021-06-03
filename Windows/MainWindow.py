@@ -5,6 +5,9 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QMainWindow, QAction, QActionGroup
 
 from Windows.ResultWindow import ResultWindow
+from Models.GeometricFigures import *
+from Triangulation.CloudOfPoints import CloudOfPoints
+from Triangulation.CreaterTriangulation import CreaterTriangulation
 
 def create_question(title, question, textBtn1, textBtn2):
     messageBox = QMessageBox()
@@ -80,6 +83,19 @@ class ImageProcessing(QMainWindow):
             self.map_imageHeight = np.array(range_color_to_range_height(oldArray=self.map_imageColor,
                                                                         newRange=self.user_rangeHeight))
             self.statusTextEdit.appendPlainText("Преобразование диапазонов завершено")
+            self.statusTextEdit.appendPlainText("Извлечение точек для триангуляции...")
+            QMessageBox.about(self, "Сообщение", "Нажмите ОК для запуска процесса извлечения точек триангуляции")
+            self.map_takenPoints = CloudOfPoints(map_imageHeight=self.map_imageHeight,
+                                                 stepXY=self.user_stepXY,
+                                                 minDist=self.user_maxDiscrepancy)
+            self.statusTextEdit.appendPlainText("Извлечение точек для триангуляции завершено")
+            self.statusTextEdit.appendPlainText("Триангуляция на плоскости...")
+            QMessageBox.about(self, "Сообщение", "Нажмите ОК для запуска процесса триангуляции на плоскости")
+            self.map_triangulation = CreaterTriangulation(nodes=self.map_takenPoints.takenPoints)
+            self.statusTextEdit.appendPlainText("Триангуляция на плоскости завершена")
+            self.statusTextEdit.appendPlainText("Триангуляция в пространстве...")
+            QMessageBox.about(self, "Сообщение", "Нажмите ОК для запуска процесса триангуляции в пространстве")
+            self.statusTextEdit.appendPlainText("Триангуляция в пространстве завершена")
             self.open_window_show_result()
 
     def open_window_show_result(self):
