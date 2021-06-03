@@ -13,3 +13,7 @@ class Triangle:
             neighbours = []
         self.nodes = nodes
         self.neighbours = neighbours
+
+    def ToDict(self):
+        return {"nodes": [" ".join([str(node.x), str(node.y), str(node.z)]) for node in self.nodes],
+                "neighbours": ' '.join([str(neighbour) for neighbour in self.neighbours])}
