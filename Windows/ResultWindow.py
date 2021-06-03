@@ -79,6 +79,10 @@ class ResultWindow(QMainWindow):
                 min(int(averageZ), colorTrianglesOnTop.blue()))
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
+        Z = [point.z for point in np.ravel(self.map_takenPoints.takenPoints)]
+        ax.set_xlim([0, max([point.x for point in np.ravel(self.map_takenPoints.takenPoints)])])
+        ax.set_ylim([0, max([point.y for point in np.ravel(self.map_takenPoints.takenPoints)])])
+        ax.set_zlim([min(Z), max(Z) * 2])
         triangles = []
         for triangle in self.map_triangulation.triangles:
             triangles.append(
