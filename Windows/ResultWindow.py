@@ -136,4 +136,3 @@ class ResultWindow(QMainWindow):
                 QMessageBox.about(self, "Сообщение", f"Триангуляция сохранена успешно в {jsonFileName}")
         except:
             QMessageBox.critical(self, "Ошибка", "Ошибка при сохранениии триангуляции!")
-

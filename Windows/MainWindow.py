@@ -1,15 +1,17 @@
 import cv2
-import numpy as np
+import json
 import sqlite3
+import numpy as np
 from datetime import datetime
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QMainWindow, QAction, QActionGroup
 
-from Windows.ResultWindow import ResultWindow
 from Models.GeometricFigures import *
+from Windows.ResultWindow import ResultWindow
 from Triangulation.CloudOfPoints import CloudOfPoints
 from Triangulation.CreaterTriangulation import CreaterTriangulation
+
 
 def create_question(title, question, textBtn1, textBtn2):
     messageBox = QMessageBox()
@@ -51,10 +53,12 @@ class ImageProcessing(QMainWindow):
         self.setFixedSize(self.width(), self.height())
         self.chooseFileButton.clicked.connect(self.choose_map_file)
         self.ExitAction.triggered.connect(lambda: exit(0))
+        self.OpenAction.triggered.connect(self.load_triangulation)
+        self.OpenTriangulation.triggered.connect(self.load_triangulation)
         self.RunAction.triggered.connect(self.start_triangulation)
         self.db_work()
 
-        def db_work(self):
+    def db_work(self):
         cursor = self.conn.cursor()
         cursor.execute("""CREATE TABLE IF NOT EXISTS file_info
                             (id INTEGER PRIMARY KEY,
@@ -143,6 +147,52 @@ class ImageProcessing(QMainWindow):
         self.map_imageColor = np.array(cv2.cvtColor(src=map_imageOriginal,
                                                     code=cv2.COLOR_BGR2GRAY))
         self.map_imageColor = cv2.GaussianBlur(self.map_imageColor, (5, 5), 5)
+
+    def load_triangulation(self):
+        fileName = QFileDialog.getOpenFileName(parent=self,
+                                               caption='Open File',
+                                               filter="JSON (*.json)")[0]
+        if len(fileName) > 0:
+            loadTriangulationQuestion, buttonYes, _ = create_question(title="Подтверждение",
+                                                                      question=f"Загрузить триангуляцию\n{fileName}?",
+                                                                      textBtn1="Да",
+                                                                      textBtn2="Нет")
+            if loadTriangulationQuestion.clickedButton() == buttonYes:
+                with open(fileName, "r") as readFile:
+                    data = json.load(readFile)
+                    data = list(data.values())
+
+                    try:
+                        self.user_parametersFromJSON = data[0]
+                        self.user_rangeHeight = [int(n) for n in self.user_parametersFromJSON["range of height"].split(" ")]
+                        self.user_stepXY = [int(n) for n in (self.user_parametersFromJSON["step on the OX axis"],
+                                                             self.user_parametersFromJSON["step on the OY axis"])]
+                        self.user_maxDiscrepancy = int(self.user_parametersFromJSON['maximum residual value'])
+
+                        self.map_imageColor = None
+                        self.map_takenPoints = CloudOfPoints()
+                        self.map_triangulation = CreaterTriangulation()
+
+                        for triangle in data[1::]:
+                            nodes = []
+                            for node in triangle['nodes']:
+                                nodeXYZ = node.split(' ')
+                                nodeXYZ = [int(float(c)) for c in nodeXYZ]
+                                nodes.append(nodeXYZ)
+                                self.map_takenPoints.takenPoints += [tuple(nodeXYZ)]
+                            self.map_triangulation.triangles.append(Triangle(
+                                nodes=[Point(node[0], node[1], node[2]) for node in nodes],
+                                neighbours=[int(n) for n in triangle['neighbours'].split(' ')]
+                            ))
+                        self.map_takenPoints.takenPoints = list(set(self.map_takenPoints.takenPoints))
+                        self.map_takenPoints.takenPoints = [Point(x=point[0], y=point[1], z=point[2]) for point in
+                                                            self.map_takenPoints.takenPoints]
+                        self.map_triangulation.nodes = self.map_takenPoints.takenPoints
+                        self.update_history()
+                        self.open_window_show_result()
+                        QMessageBox.about(self, "Сообщение", "Триангуляция успешно загружена")
+                    except:
+                        QMessageBox.critical(self, "Ошибка", "Не совпадает структура файла!")
 
     def start_triangulation(self):
         if len(self.pathFileLabel.text()) == 0:

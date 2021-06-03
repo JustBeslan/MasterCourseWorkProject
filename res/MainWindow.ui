@@ -264,6 +264,7 @@
     <property name="title">
      <string>Триангуляция</string>
     </property>
+    <addaction name="OpenTriangulation"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="TriangulationMenu"/>
@@ -278,6 +279,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="OpenAction"/>
+   <addaction name="separator"/>
    <addaction name="RunAction"/>
    <addaction name="separator"/>
    <addaction name="ExitAction"/>
@@ -300,6 +303,24 @@
     <string>Ctrl+Q</string>
    </property>
   </action>
+  <action name="OpenAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>open.png</normaloff>open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open</string>
+   </property>
+   <property name="toolTip">
+    <string>Открыть</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
   <action name="RunAction">
    <property name="checkable">
     <bool>true</bool>
@@ -313,6 +334,15 @@
    </property>
    <property name="toolTip">
     <string>Запустить</string>
+   </property>
+  </action>
+  <action name="OpenTriangulation">
+   <property name="icon">
+    <iconset>
+     <normaloff>open.png</normaloff>open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Открыть</string>
    </property>
   </action>
  </widget>
