@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import sqlite3
+from datetime import datetime
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QMainWindow, QAction, QActionGroup
@@ -50,6 +52,79 @@ class ImageProcessing(QMainWindow):
         self.chooseFileButton.clicked.connect(self.choose_map_file)
         self.ExitAction.triggered.connect(lambda: exit(0))
         self.RunAction.triggered.connect(self.start_triangulation)
+        self.db_work()
+
+        def db_work(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""CREATE TABLE IF NOT EXISTS file_info
+                            (id INTEGER PRIMARY KEY,
+                            path TEXT,
+                            date_of_use TEXT)""")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS triangle_parameters
+                            (file_id INTEGER NOT NULL REFERENCES file_info(id), 
+                            min_height INTEGER, max_height INTEGER,
+                            step_x INTEGER, step_y INTEGER,
+                            max_discrepancy INTEGER)""")
+        self.conn.commit()
+        cursor.execute("SELECT * FROM file_info")
+        file_info_all = cursor.fetchall()
+        actionGroup = QActionGroup(self)
+        if len(file_info_all) > 0:
+            for file_info in file_info_all:
+                action = QAction(f"|_№{file_info[0]}_|_{file_info[2]}_| {file_info[1]}", self)
+                actionGroup.addAction(action)
+                self.TriangulationMenu.addAction(action)
+            actionGroup.triggered.connect(self.load_parameters)
+
+    def update_history(self):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(id) FROM file_info")
+        row_count = cursor.fetchone()[0]
+        cursor.execute(f"""INSERT INTO file_info VALUES (?,?,?);""",
+                       (row_count + 1,
+                        self.pathFileLabel.text() if len(self.pathFileLabel.text()) > 0 is not None
+                        else self.user_parametersFromJSON['path to map of height'],
+                        datetime.today().strftime('%d.%m.%Y %H:%M')))
+        cursor.execute(f"""INSERT INTO triangle_parameters VALUES (?,?,?,?,?,?);""",
+                       (row_count + 1,
+                        self.user_rangeHeight[0],
+                        self.user_rangeHeight[1],
+                        self.user_stepXY[0],
+                        self.user_stepXY[1],
+                        self.user_maxDiscrepancy))
+        self.conn.commit()
+        if row_count == 5:
+            cursor.execute(f"""DELETE FROM triangle_parameters WHERE file_id = ?""", (1,))
+            cursor.execute(f"""DELETE FROM file_info WHERE id = ?""", (1,))
+            cursor.execute(f"""UPDATE triangle_parameters SET file_id = file_id-1""")
+            cursor.execute(f"""UPDATE file_info SET id = id-1""")
+            self.conn.commit()
+
+    def load_parameters(self, action):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM file_info WHERE id=?", (int(action.text()[3]),))
+        info = cursor.fetchone()
+        loadParametersQuestion, buttonYes, _ = create_question(
+            title="Подтверждение",
+            question=f"Вы желаете загрузить триангуляцию от {info[2]}\nдля файла {info[1]}?",
+            textBtn1="Да",
+            textBtn2="Нет")
+        if loadParametersQuestion.clickedButton() == buttonYes:
+            cursor.execute("SELECT * FROM triangle_parameters WHERE file_id=?", (info[0],))
+            parameters = cursor.fetchone()
+            self.minHeightSpin.setValue(parameters[1])
+            self.maxHeightSpin.setValue(parameters[2])
+            self.stepXSpin.setValue(parameters[3])
+            self.stepYSpin.setValue(parameters[4])
+            self.maxDiscrepancySpin.setValue(parameters[5])
+            try:
+                self.pathFileLabel.setText(info[1])
+                self.load_map_file()
+                QMessageBox.about(self, "Сообщение", "Параметры и изображение загружены")
+            except:
+                self.pathFileLabel.setText("")
+                QMessageBox.critical(self, "Ошибка", f"Файла\n\n{info[1]}\n\nне существует!")
+                QMessageBox.about(self, "Сообщение", "Остальные параметры загружены")
 
     def choose_map_file(self):
         fileName = QFileDialog.getOpenFileName(parent=self,
@@ -96,6 +171,7 @@ class ImageProcessing(QMainWindow):
             self.statusTextEdit.appendPlainText("Триангуляция в пространстве...")
             QMessageBox.about(self, "Сообщение", "Нажмите ОК для запуска процесса триангуляции в пространстве")
             self.statusTextEdit.appendPlainText("Триангуляция в пространстве завершена")
+            self.update_history()
             self.open_window_show_result()
 
     def open_window_show_result(self):
