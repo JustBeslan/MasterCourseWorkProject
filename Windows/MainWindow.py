@@ -4,6 +4,8 @@ import numpy as np
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QMainWindow, QAction, QActionGroup
 
+from Windows.ResultWindow import ResultWindow
+
 def create_question(title, question, textBtn1, textBtn2):
     messageBox = QMessageBox()
     messageBox.setIcon(QMessageBox.Question)
@@ -82,3 +84,12 @@ class ImageProcessing(QMainWindow):
 
     def open_window_show_result(self):
         self.close()
+        ResultWindow(user_parameters={
+            "path": self.user_parametersFromJSON['path to map of height']
+            if self.map_imageColor is None else self.pathFileLabel.text(),
+            "range of height": self.user_rangeHeight,
+            "step on the OX and OY axes": self.user_stepXY,
+            "maximum residual value": self.user_maxDiscrepancy},
+            originalImage=self.map_imageColor,
+            map_takenPoints=self.map_takenPoints,
+            triangulation=self.map_triangulation)
