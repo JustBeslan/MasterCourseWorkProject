@@ -37,6 +37,8 @@ class ResultWindow(QMainWindow):
         self.ColorTrianglesButton.clicked.connect(lambda: choose_color(self.ColorTrianglesButton))
         self.ColorSkeletonButton.clicked.connect(lambda: choose_color(self.ColorSkeletonButton))
 
+        self.actionSaveAs.triggered.connect(self.save_triangulation)
+
         self.ShowMapOfHeightButton.clicked.connect(lambda: self.show_map_image(originalImage))
         self.infoTextEdit.setPlainText(
             f"|_1_| Абсолютный путь к файлу: {self.user_parameters['path']}\n"
@@ -106,3 +108,28 @@ class ResultWindow(QMainWindow):
         cv2.imshow("The map of height", map_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+    def save_triangulation(self):
+        try:
+            triangles = {"parameters": {
+                "path to map of height": self.user_parameters['path'],
+                "range of height":
+                    f"{self.user_parameters['range of height'][0]} {self.user_parameters['range of height'][1]}",
+                "step on the OX axis": f"{self.user_parameters['step on the OX and OY axes'][0]}",
+                "step on the OY axis": f"{self.user_parameters['step on the OX and OY axes'][1]}",
+                "maximum residual value": f"{self.user_parameters['maximum residual value']}",
+            }}
+            triangles.update({"Triangle {0}".format(i): self.map_triangulation.triangles[i].ToDict()
+                              for i in range(len(self.map_triangulation.triangles))})
+            jsonFileName = QFileDialog.getSaveFileName(parent=self,
+                                                       caption="Сохранить",
+                                                       filter="JSON Files (*.json)")[0]
+            if jsonFileName is not None:
+                with open(jsonFileName, "w") as file:
+                    json.dump(obj=triangles,
+                              fp=file,
+                              indent=4)
+                QMessageBox.about(self, "Сообщение", f"Триангуляция сохранена успешно в {jsonFileName}")
+        except:
+            QMessageBox.critical(self, "Ошибка", "Ошибка при сохранениии триангуляции!")
+

@@ -56,8 +56,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>98</width>
-       <height>28</height>
+       <width>388</width>
+       <height>175</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -104,8 +104,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>98</width>
-       <height>28</height>
+       <width>388</width>
+       <height>175</height>
       </rect>
      </property>
      <attribute name="label">
@@ -349,6 +349,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionSaveAs"/>
    <addaction name="actionShow"/>
    <addaction name="separator"/>
    <addaction name="actionExit"/>
@@ -384,6 +385,21 @@
    </property>
    <property name="toolTip">
     <string>Показать</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="icon">
+    <iconset>
+     <normaloff>save.png</normaloff>save.png</iconset>
+   </property>
+   <property name="text">
+    <string>SaveAs</string>
+   </property>
+   <property name="toolTip">
+    <string>Сохранить как...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>
