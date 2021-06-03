@@ -15,9 +15,9 @@ class CloudOfPoints:
                 self.splitting_axis(map_imageHeight.shape[0], stepXY[0]),
                 self.splitting_axis(map_imageHeight.shape[1], stepXY[1])]
             self.takenPoints = [[Point(x, y) for x in splittingAxisXY[1]] for y in splittingAxisXY[0]]
-                        for y in range(len(self.takenPoints)):
+            for y in range(len(self.takenPoints)):
                 for x in range(len(self.takenPoints[0])):
-                    self.takenPoints[y][x].z = map_imageHeight[splittingAxisXY[0][y]][splittingAxisXY[1][x]]
+                    self.takenPoints[y][x].z = map_imageHeight[splittingAxisXY[0][y] if y < len(self.takenPoints) - 1 else splittingAxisXY[0][y] - 1][splittingAxisXY[1][x] if x < len(self.takenPoints[0]) - 1 else splittingAxisXY[1][x] - 1]
 
     def splitting_axis(self, shape, step):
         takenNumbers = [i * step for i in range(int(shape / step) + 1)]
